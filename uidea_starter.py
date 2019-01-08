@@ -1,5 +1,5 @@
 from libs import plugin, dataloader
-from plugins.UIdea.libs import ui as ui_class
+from addons.UIdea.libs import ui as ui_class
 import os, json, time
 import discord
 import re
@@ -7,7 +7,7 @@ import traceback
 
 DISCORD_RXN_MAX = 20
 
-UI_DATA_PATH = 'data/uidea'
+UI_DATA_PATH = 'addons/UIdea/data'
 DEFAULT_UIDEA_JSON = 'default_uidea_json.json'
 
 DEFAULT_JSON = dataloader.datafile(os.path.join(UI_DATA_PATH, DEFAULT_UIDEA_JSON), load_as='json').content
@@ -92,6 +92,9 @@ If it is evident, I've probably done something wrong. '''
         self.public_namespace.ui_jsons = load_ui_jsons(UI_DATA_PATH)
         # load each ui as defined in each json
         self.public_namespace.uis = load_uis(self.public_namespace.ui_jsons)
+        #print("UI JSON")
+        #print(json.dumps(self.public_namespace.ui_jsons, indent=4))
+        self.public_namespace.ui_messages = dict() # TODO: Load for persistence
 
 
     async def action(self, msg):
@@ -105,7 +108,7 @@ If it is evident, I've probably done something wrong. '''
                 pass
             else:
                 if is_match:
-                    ui_msg = await self.send_message(msg.channel, embed=temp_dict[UI_INSTANCE])
+                    # ui_msg = await self.send_message(msg.channel, embed=temp_dict[UI_INSTANCE])
                     temp_dict = dict()
                     temp_dict[CREATOR] = msg.author.id
                     temp_dict[CREATION_TIME] = temp_dict[LAST_UPDATED] = time.time()

@@ -10,7 +10,12 @@ class UI:
         self.embed = makeEmbed()
 
     def update(self):
-        self.loop.run_until_complete(self.edit_message(self.message, embed=self.getEmbed()))
+        # _update(self.message, self.getEmbed())
+        # self.loop.call_soon(self._update, self.message, self.getEmbed())
+        self.loop.create_task(self.edit_message(self.message, embed=self.getEmbed()))
+
+    async def _update(self, msg, embed):
+        await self.edit_message(msg, embed=embed)
 
     def getEmbed(self):
         return self.embed
