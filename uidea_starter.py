@@ -11,12 +11,19 @@ UI_DATA_PATH = 'addons/UIdea/data'
 DEFAULT_UIDEA_JSON = 'default_uidea_json.json'
 
 DEFAULT_JSON = dataloader.datafile(os.path.join(UI_DATA_PATH, DEFAULT_UIDEA_JSON), load_as='json').content
+UI_JSONS_PATH = 'addons'
 # print(json.dumps(DEFAULT_JSON, indent=4)) # debug
 UI_SAVE_LOC = os.path.join(UI_DATA_PATH, 'saved')
 if not os.path.isdir(UI_SAVE_LOC):
     os.mkdir(UI_SAVE_LOC)
 
+SUPPORTED_API_VERSIONS = ['v0.0.1', 'v0.0.2', 'v0.0.3', 'v0.0.4']
+
 # constants for json file
+VERSION = 'version'
+API = 'api'
+TYPE = 'type'
+
 INFO = 'info'
 NAME = 'name'
 DESCRIPTION = 'description'
@@ -59,6 +66,10 @@ If it is evident, I've probably done something wrong. '''
         self.public_namespace.UI_DATA_PATH = UI_DATA_PATH
 
         # constants for json file
+        self.public_namespace.VERSION = VERSION
+        self.public_namespace.API = API
+        self.public_namespace.TYPE = TYPE
+
         self.public_namespace.INFO = INFO
         self.public_namespace.NAME = NAME
         self.public_namespace.DESCRIPTION = DESCRIPTION
@@ -92,7 +103,7 @@ If it is evident, I've probably done something wrong. '''
         if not os.path.isdir(UI_DATA_PATH):
             os.mkdir(UI_DATA_PATH)
         # load ui jsons
-        self.public_namespace.ui_jsons = load_ui_jsons(UI_DATA_PATH)
+        self.public_namespace.ui_jsons = load_ui_jsons(UI_JSONS_PATH)
         # load each ui as defined in each json
         self.public_namespace.uis = load_uis(self.public_namespace.ui_jsons)
         #print("UI JSON")
@@ -184,7 +195,7 @@ def load_ui_jsons(root):
                     print('!!! Error in JSON of ui %s:' %(f[:-len('.json')]))
                     pass
         else:
-            for sub_f in sorted(os.listdir(root)):
+            for sub_f in sorted(os.listdir(os.path.join(root, f))):
                 if os.path.isfile(os.path.join(root, f, sub_f)):
                     if sub_f[-len('.json'):]=='.json' and sub_f[0]!='_':
                         with open(os.path.join(root, f, sub_f), 'r') as file:
@@ -198,6 +209,7 @@ def load_ui_jsons(root):
                             # TODO: log warning about invalid JSON
                             print('!!! Error in JSON of ui %s:' %(sub_f[:-len('.json')]))
                             pass
+    print('Loaded JSONS:', ui_jsons)
     return ui_jsons
 
 def load_uis(ui_jsons):
@@ -222,6 +234,15 @@ def load_uis(ui_jsons):
 def verify_ui_json(json_var):
     if not isinstance(json_var, dict):
         return False
+    # verify version info
+    if VERSION in json_var and isinstance(json_var[VERSION], dict):
+        if not (TYPE in json_var[VERSION] and API in json_var[VERSION]):
+            return False
+        if json_var[VERSION][API] not in SUPPORTED_API_VERSIONS:
+            return False
+    else:
+        return False
+    # verify reactions
     if ONREACTION in json_var:
         # check for correct type
         if not isinstance(json_var[ONREACTION], dict):

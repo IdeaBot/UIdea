@@ -18,6 +18,7 @@ If it is evident, I've probably done something wrong.
 
     async def action(self):
         print("Starting cleanup...")
+        print(self.public_namespace.ui_messages)
         to_del = list()
         for ui in self.public_namespace.ui_messages:
             ui_inst_dict = self.public_namespace.ui_messages[ui]
