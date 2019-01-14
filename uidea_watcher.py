@@ -1,13 +1,13 @@
 from libs import reaction
 import asyncio
-import discord
+import discord, time
 import traceback
 
 class Reaction(reaction.ReactionAddCommand, reaction.ReactionRemoveCommand):
     '''UIdea plugin to watch for reactions to UI messages.
 This calls the function associated with the emoji, as defined in the .json config file for your ui.
 
-For more information about UIdea, see it on GitHub : <link>
+For more information about UIdea, see it on GitHub : <https://github.com/IdeaBot/UIdea>
 
 Your interaction with this will probably never be evident.
 If it is evident, I've probably done something wrong. '''
@@ -18,6 +18,7 @@ If it is evident, I've probably done something wrong. '''
 
     def matches(self, reaction, user):
         if reaction.message.id+':'+reaction.message.channel.id in self.public_namespace.ui_messages and user.id != reaction.message.server.me.id:
+            # print(reaction.emoji) # NOTE: certain emojis are converted to different emojis by discord; don't ask why
             # ui_inst_dict is the specific UI's instance variables
             ui_inst_dict = self.public_namespace.ui_messages[reaction.message.id+':'+reaction.message.channel.id]
             # ui_json is the specific UI's general variables (ie behaviour settings)
@@ -30,22 +31,26 @@ If it is evident, I've probably done something wrong. '''
                 else:
                     emoji = reaction.emoji.id
                 emoji_match = emoji in ui_json[self.public_namespace.ONREACTION]
-                print('Emoji matches:', emoji_match)
+                # print('Emoji matches:', emoji_match)
                 if ui_json[self.public_namespace.PRIVATE]:
                     return user.id==ui_inst_dict[self.public_namespace.CREATOR] and emoji_match
                 else:
                     return emoji_match
-        print('You\'re no match for me!')
+        # print('You\'re no match for me!')
         return False
 
     @asyncio.coroutine
     def action(self, reaction, user):
         ui_inst_dict = self.public_namespace.ui_messages[reaction.message.id+':'+reaction.message.channel.id]
+        # update last update time
+        ui_inst_dict[self.public_namespace.LAST_UPDATED] = time.time()
+        # determine emoji type to use
         if isinstance(reaction.emoji, str):
             emoji = reaction.emoji
         else:
             emoji = reaction.emoji.id
         onReaction_func_name = self.public_namespace.ui_jsons[ui_inst_dict[self.public_namespace.UI_NAME]][self.public_namespace.ONREACTION][emoji]
+        print(onReaction_func_name)
         try:
             eval('ui_inst_dict[self.public_namespace.UI_INSTANCE].'+onReaction_func_name+'(reaction, user)')
         except:

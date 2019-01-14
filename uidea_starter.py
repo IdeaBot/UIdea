@@ -12,6 +12,9 @@ DEFAULT_UIDEA_JSON = 'default_uidea_json.json'
 
 DEFAULT_JSON = dataloader.datafile(os.path.join(UI_DATA_PATH, DEFAULT_UIDEA_JSON), load_as='json').content
 # print(json.dumps(DEFAULT_JSON, indent=4)) # debug
+UI_SAVE_LOC = os.path.join(UI_DATA_PATH, 'saved')
+if not os.path.isdir(UI_SAVE_LOC):
+    os.mkdir(UI_SAVE_LOC)
 
 # constants for json file
 INFO = 'info'
@@ -45,7 +48,7 @@ class Plugin(plugin.AdminPlugin, plugin.OnMessagePlugin):
     '''UIdea plugin to create new UIs.
 Conditions for creating a new UI message should be defined in the .json config file for your ui.
 
-For more information about UIdea, see GitHub : <link>
+For more information about UIdea, see GitHub : <https://github.com/IdeaBot/UIdea>
 
 Your interaction with this will probably never be evident.
 If it is evident, I've probably done something wrong. '''
@@ -94,7 +97,7 @@ If it is evident, I've probably done something wrong. '''
         self.public_namespace.uis = load_uis(self.public_namespace.ui_jsons)
         #print("UI JSON")
         #print(json.dumps(self.public_namespace.ui_jsons, indent=4))
-        self.public_namespace.ui_messages = dict() # TODO: Load for persistence
+        self.public_namespace.ui_messages = self.load_ui_messages(self.public_namespace.ui_jsons) # load for persistence
 
 
     async def action(self, msg):
@@ -124,8 +127,12 @@ If it is evident, I've probably done something wrong. '''
                         pass
                     # add reactions to ui msg
                     for emoji in self.public_namespace.ui_jsons[ui][ONREACTION]:
-                        if len(emoji)!=1:
+                        emoji = emoji.strip()
+                        if len(emoji)==18: # discord ID length is 18
                             emoji = discord.Object(id=emoji)
+                        else:
+                            emoji = emoji[0]
+                            # TODO: Fix json on loading in cases where there are hidden characters
                         await self.add_reaction(ui_msg, emoji)
                     if self.public_namespace.ui_jsons[ui][ONCREATE] is not None:
                         try:
@@ -138,6 +145,26 @@ If it is evident, I've probably done something wrong. '''
                     self.public_namespace.ui_messages[ui_msg.id+':'+ui_msg.channel.id]=temp_dict
                     self.public_namespace.ui_messages[ui_msg.id+':'+ui_msg.channel.id][IS_LIVE]=True
                     break
+
+    def shutdown(self):
+        self.save_ui_messages(self.public_namespace.ui_messages)
+
+    def save_ui_messages(self, ui_messages):
+        for ui in ui_messages:
+            # picke every ui instance and save
+            # replace ui_instance value with filepath
+            # save every json
+            pass
+
+    def load_ui_messages(self, ui_jsons):
+        result = dict()
+        for f in os.listdir(UI_SAVE_LOC):
+            # load every json
+            # load pickle into ui_instance
+            pass
+        return result
+
+
 
 def load_ui_jsons(root):
     '''Search for & load ui jsons, up to two folders deep'''
@@ -152,6 +179,10 @@ def load_ui_jsons(root):
                     merge_defaults(temp_json, package=None, name=f[:-len('.json')], filepath=os.path.join(root, f)[:-len('.json')])
                     correct_func_strs(temp_json)
                     ui_jsons[temp_json[INFO][NAME]]=temp_json
+                else:
+                    # TODO: log warning about invalid JSON
+                    print('!!! Error in JSON of ui %s:' %(f[:-len('.json')]))
+                    pass
         else:
             for sub_f in sorted(os.listdir(root)):
                 if os.path.isfile(os.path.join(root, f, sub_f)):
@@ -163,6 +194,10 @@ def load_ui_jsons(root):
                             merge_defaults(temp_json, package=f, name=sub_f[:-len('.json')], filepath=os.path.join(root, f, sub_f)[:-len('.json')])
                             correct_func_strs(temp_json)
                             ui_jsons[temp_json[INFO][NAME]]=temp_json
+                        else:
+                            # TODO: log warning about invalid JSON
+                            print('!!! Error in JSON of ui %s:' %(sub_f[:-len('.json')]))
+                            pass
     return ui_jsons
 
 def load_uis(ui_jsons):
@@ -194,6 +229,10 @@ def verify_ui_json(json_var):
         # check that reactions does not exceed 20 (discord rxn limit)
         if len(json_var[ONREACTION])>DISCORD_RXN_MAX:
             return False
+        # check that each emoji is of length 1 or 18 (ID length)
+        for emoji in json_var[ONREACTION]:
+            if len(emoji)!=1 and len(emoji)!=18:
+                return False
     return True
 
 def merge_defaults(json_dict, **kwargs):
