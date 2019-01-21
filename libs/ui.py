@@ -1,13 +1,11 @@
 from libs import embed
 
-DEFAULT_EMBED_DICT = {'description':'placeholder UI'}
-
 class UI:
     def __init__(self, loop, edit_msg, msg):
         self.loop = loop
         self.message = msg
         self.edit_message = edit_msg
-        self.embed = makeEmbed()
+        self.embed = makeEmbed(msg.embeds[0])
 
     def update(self):
         # _update(self.message, self.getEmbed())
@@ -20,5 +18,5 @@ class UI:
     def getEmbed(self):
         return self.embed
 
-def makeEmbed():
-    return embed.create_embed(**DEFAULT_EMBED_DICT)
+def makeEmbed(embed_dict):
+    return embed.create_embed(**embed_dict)

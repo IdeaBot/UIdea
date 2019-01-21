@@ -117,3 +117,6 @@ test.*
 plugins/**/test.py
 reactions/**/test.py
 commands/**/test.py
+
+#ignore data folder; it contains generated stuff only
+data/**

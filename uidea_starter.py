@@ -4,6 +4,7 @@ import os, json, time
 import discord
 import re
 import traceback
+import pickle
 
 DISCORD_RXN_MAX = 20
 
@@ -11,11 +12,17 @@ UI_DATA_PATH = 'addons/UIdea/data'
 DEFAULT_UIDEA_JSON = 'default_uidea_json.json'
 
 DEFAULT_JSON = dataloader.datafile(os.path.join(UI_DATA_PATH, DEFAULT_UIDEA_JSON), load_as='json').content
+if not os.path.isdir(UI_DATA_PATH):
+    os.mkdir(UI_DATA_PATH)
 UI_JSONS_PATH = 'addons'
 # print(json.dumps(DEFAULT_JSON, indent=4)) # debug
 UI_SAVE_LOC = os.path.join(UI_DATA_PATH, 'saved')
 if not os.path.isdir(UI_SAVE_LOC):
     os.mkdir(UI_SAVE_LOC)
+
+UI_PICKLE_LOC = os.path.join(UI_DATA_PATH, 'pickles')
+if not os.path.isdir(UI_PICKLE_LOC):
+    os.mkdir(UI_PICKLE_LOC)
 
 SUPPORTED_API_VERSIONS = ['v0.0.1', 'v0.0.2', 'v0.0.3', 'v0.0.4']
 
@@ -41,6 +48,7 @@ ONCREATE = 'onCreate'
 ONDELETE = 'onDelete'
 ONPERSIST = 'onPersist'
 ONREACTION = 'onReaction'
+DEFAULT_EMBED = 'defaultEmbed'
 DEBUG = 'debug'
 
 # ui_messages constants
@@ -87,6 +95,7 @@ If it is evident, I've probably done something wrong. '''
         self.public_namespace.ONDELETE = ONDELETE
         self.public_namespace.ONPERSIST = ONPERSIST
         self.public_namespace.ONREACTION = ONREACTION
+        self.public_namespace.DEFAULT_EMBED = DEFAULT_EMBED
         self.public_namespace.DEBUG = DEBUG
 
         # ui_messages constants
@@ -100,8 +109,6 @@ If it is evident, I've probably done something wrong. '''
 
     def on_client_add(self):
         # true startup
-        if not os.path.isdir(UI_DATA_PATH):
-            os.mkdir(UI_DATA_PATH)
         # load ui jsons
         self.public_namespace.ui_jsons = load_ui_jsons(UI_JSONS_PATH)
         # load each ui as defined in each json
@@ -128,7 +135,7 @@ If it is evident, I've probably done something wrong. '''
                     temp_dict[CREATION_TIME] = temp_dict[LAST_UPDATED] = time.time()
                     temp_dict[UI_NAME] = ui
                     temp_dict[IS_LIVE] = False
-                    ui_msg = await self.send_message(msg.channel, embed=ui_class.makeEmbed())
+                    ui_msg = await self.send_message(msg.channel, embed=ui_class.makeEmbed(self.public_namespace.ui_jsons[ui][DEFAULT_EMBED]) )
                     try:
                         temp_dict[UI_INSTANCE] = self.public_namespace.uis[ui].UI(self.bot.loop, self.edit_message, ui_msg)
                     except:
@@ -155,6 +162,8 @@ If it is evident, I've probably done something wrong. '''
                             pass
                     self.public_namespace.ui_messages[ui_msg.id+':'+ui_msg.channel.id]=temp_dict
                     self.public_namespace.ui_messages[ui_msg.id+':'+ui_msg.channel.id][IS_LIVE]=True
+                    # add ui message to always_watch_messages
+                    self.bot.always_watch_messages.add(ui_msg)
                     break
 
     def shutdown(self):
@@ -162,17 +171,52 @@ If it is evident, I've probably done something wrong. '''
 
     def save_ui_messages(self, ui_messages):
         for ui in ui_messages:
-            # picke every ui instance and save
-            # replace ui_instance value with filepath
-            # save every json
-            pass
+            if self.public_namespace.ui_jsons[ui_messages[ui][UI_NAME]][PERSISTENCE]:
+                # print('Now saving', ui_messages[ui][UI_NAME]) # debug
+                # print(ui_messages[ui][UI_INSTANCE].__dict__) # debug
+                pickle_loc = os.path.join(UI_PICKLE_LOC, ui)
+                ui_message_json_loc = os.path.join(UI_SAVE_LOC, ui+'.json')
+                # delete incompatible vars
+                del(ui_messages[ui][UI_INSTANCE].edit_message)
+                del(ui_messages[ui][UI_INSTANCE].loop)
+                # picke ui instance and save
+                with open(pickle_loc, 'wb') as file:
+                    pickle.dump(ui_messages[ui][UI_INSTANCE], file, protocol=pickle.HIGHEST_PROTOCOL)
+                # replace ui_instance value with filepath
+                ui_dict = dict(ui_messages[ui]) # copy
+                ui_dict[UI_INSTANCE]=pickle_loc
+                # save json
+                with open(ui_message_json_loc, 'w') as file:
+                    json.dump(ui_dict, file)
 
     def load_ui_messages(self, ui_jsons):
         result = dict()
         for f in os.listdir(UI_SAVE_LOC):
-            # load every json
-            # load pickle into ui_instance
-            pass
+            if os.path.isfile(os.path.join(UI_SAVE_LOC, f)) and f.endswith('.json'):
+                key = f[:-len('.json')]
+                # load json
+                with open(os.path.join(UI_SAVE_LOC, f), 'r') as file:
+                    result[key]=json.load(file)
+                # print('Reloading', result[key][UI_NAME]) # debug
+                # load pickle into ui_instance
+                with open(result[key][UI_INSTANCE], 'rb') as file:
+                    result[key][UI_INSTANCE]=pickle.load(file)
+                # update LAST_UPDATED
+                result[key][LAST_UPDATED]=time.time()
+                if result[key][UI_NAME] not in ui_jsons:
+                    del(result[key])
+                else:
+                    # restore incompatible vars
+                    result[key][UI_INSTANCE].loop = self.bot.loop
+                    result[key][UI_INSTANCE].edit_message = self.edit_message
+                    if ui_jsons[result[key][UI_NAME]][ONPERSIST]:
+                        try:
+                            eval('result[key][UI_INSTANCE].'+ui_jsons[result[key][UI_NAME]][ONPERSIST]+'()')
+                        except:
+                            # TODO: system to notify owner of startup error
+                            print('!!! Error in %s method for ui %s:' %(ui_jsons[result[key][UI_NAME]][ONPERSIST], result[key][UI_NAME]))
+                            traceback.print_exc()
+                            pass
         return result
 
 
