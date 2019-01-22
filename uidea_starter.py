@@ -170,6 +170,25 @@ If it is evident, I've probably done something wrong. '''
         self.save_ui_messages(self.public_namespace.ui_messages)
 
     def save_ui_messages(self, ui_messages):
+        # clear save folder
+        for f in os.listdir(UI_SAVE_LOC):
+            try:
+                os.remove(os.path.join(UI_SAVE_LOC, f))
+            except OSError:
+                # TODO: proper logging for errors
+                print('!!! Error deleting %s' %(os.path.join(UI_SAVE_LOC, f)))
+                traceback.print_exc()
+                pass
+        # clear pickle folder
+        for f in os.listdir(UI_PICKLE_LOC):
+            try:
+                os.remove(os.path.join(UI_PICKLE_LOC, f))
+            except OSError:
+                # TODO: proper logging for errors
+                print('!!! Error deleting %s' %(os.path.join(UI_PICKLE_LOC, f)))
+                traceback.print_exc()
+                pass
+
         for ui in ui_messages:
             if self.public_namespace.ui_jsons[ui_messages[ui][UI_NAME]][PERSISTENCE]:
                 # print('Now saving', ui_messages[ui][UI_NAME]) # debug
@@ -253,7 +272,7 @@ def load_ui_jsons(root):
                             # TODO: log warning about invalid JSON
                             print('!!! Error in JSON of ui %s:' %(sub_f[:-len('.json')]))
                             pass
-    print('Loaded JSONS:', ui_jsons)
+    # print('Loaded JSONS:', ui_jsons) # debug
     return ui_jsons
 
 def load_uis(ui_jsons):

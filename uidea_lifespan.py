@@ -17,8 +17,6 @@ If it is evident, I've probably done something wrong.
         self.always_watch_messages=always_watch_messages
 
     async def action(self):
-        print("Starting cleanup...")
-        print(self.public_namespace.ui_messages)
         to_del = list()
         for ui in self.public_namespace.ui_messages:
             ui_inst_dict = self.public_namespace.ui_messages[ui]
@@ -27,6 +25,15 @@ If it is evident, I've probably done something wrong.
             # compare ui json lifespan with ui_message timespan since last update
             if ui_json[self.public_namespace.LIFESPAN]>=0 and (time.time()-ui_inst_dict[self.public_namespace.LAST_UPDATED])>ui_json[self.public_namespace.LIFESPAN]:
                 # if past lifespan
+                # do onDelete
+                if ui_json[self.public_namespace.ONDELETE]:
+                    try:
+                        eval('self.public_namespace.ui_messages[ui][self.public_namespace.UI_INSTANCE].'+ui_json[self.public_namespace.ONDELETE]+'()')
+                    except:
+                        # TODO: system to notify owner of onDelete error
+                        print('!!! Error in %s method for ui %s:' %(ui_json[self.public_namespace.ONDELETE], self.public_namespace.ui_messages[ui][self.public_namespace.UI_NAME]))
+                        traceback.print_exc()
+                        pass
                 # delete message
                 # await self.edit_message(ui_inst_dict[self.public_namespace.UI_INSTANCE].message, new_content='Expired', embed=None)
                 await self.bot.delete_message(ui_inst_dict[self.public_namespace.UI_INSTANCE].message)
@@ -40,6 +47,5 @@ If it is evident, I've probably done something wrong.
                 to_del.append(ui)
         # delete ui_instance data
         for i in to_del:
-            print("Deleting "+i)
+            # print("Deleting "+i) # debug
             del(self.public_namespace.ui_messages[i])
-        print(self.public_namespace.ui_messages)
