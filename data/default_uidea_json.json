@@ -1,0 +1,25 @@
+{
+  "version":{
+    "api":"v0.0.1",
+    "type":"ui-json"
+  },
+  "info":{
+    "name":null,
+    "description":"It's indescribable",
+    "help":"You can't be helped",
+    "package":null,
+    "filepath":null,
+    "maintainers": [],
+    "owner": "106537989684887552"
+  },
+  "lifespan":-1,
+  "persistence":true,
+  "private":true,
+  "shouldCreate":"shouldCreate",
+  "onCreate":null,
+  "onDelete":null,
+  "onPersist":null,
+  "onReaction":{},
+  "defaultEmbed":{"description":"placeholder UI"},
+  "debug":[]
+}
