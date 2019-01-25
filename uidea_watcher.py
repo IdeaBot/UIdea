@@ -1,4 +1,7 @@
 from libs import reaction
+from addons.UIdea.libs import ui as ui_class
+from addons.UIdea.libs import ui_helper, ui_error
+from addons.UIdea.libs.ui_constants import *
 import asyncio
 import discord, time
 import traceback
@@ -22,18 +25,18 @@ If it is evident, I've probably done something wrong. '''
             # ui_inst_dict is the specific UI's instance variables
             ui_inst_dict = self.public_namespace.ui_messages[reaction.message.id+':'+reaction.message.channel.id]
             # ui_json is the specific UI's general variables (ie behaviour settings)
-            ui_json = self.public_namespace.ui_jsons[ui_inst_dict[self.public_namespace.UI_NAME]]
+            ui_json = self.public_namespace.ui_jsons[ui_inst_dict[UI_NAME]]
             # ui instance must be active in order for reaction "buttons" to work
-            if ui_inst_dict[self.public_namespace.IS_LIVE]:
+            if ui_inst_dict[IS_LIVE]:
                 # get emoji, accounting for chr emojis and custom emojis (their ID is used)
                 if isinstance(reaction.emoji, str):
                     emoji = reaction.emoji
                 else:
                     emoji = reaction.emoji.id
-                emoji_match = emoji in ui_json[self.public_namespace.ONREACTION]
+                emoji_match = emoji in ui_json[ONREACTION]
                 # print('Emoji matches:', emoji_match)
-                if ui_json[self.public_namespace.PRIVATE]:
-                    return user.id==ui_inst_dict[self.public_namespace.CREATOR] and emoji_match
+                if ui_json[PRIVATE]:
+                    return user.id==ui_inst_dict[CREATOR] and emoji_match
                 else:
                     return emoji_match
         # print('You\'re no match for me!')
@@ -43,17 +46,12 @@ If it is evident, I've probably done something wrong. '''
     def action(self, reaction, user):
         ui_inst_dict = self.public_namespace.ui_messages[reaction.message.id+':'+reaction.message.channel.id]
         # update last update time
-        ui_inst_dict[self.public_namespace.LAST_UPDATED] = time.time()
+        ui_inst_dict[LAST_UPDATED] = time.time()
         # determine emoji type to use
         if isinstance(reaction.emoji, str):
             emoji = reaction.emoji
         else:
             emoji = reaction.emoji.id
-        onReaction_func_name = self.public_namespace.ui_jsons[ui_inst_dict[self.public_namespace.UI_NAME]][self.public_namespace.ONREACTION][emoji]
-        print(onReaction_func_name)
-        try:
-            eval('ui_inst_dict[self.public_namespace.UI_INSTANCE].'+onReaction_func_name+'(reaction, user)')
-        except:
-            # TODO: notify UI owner of failure
-            traceback.print_exc()
-            pass
+        onReaction_func_name = self.public_namespace.ui_jsons[ui_inst_dict[UI_NAME]][ONREACTION][emoji]
+        # print(onReaction_func_name)
+        result, is_success = ui_helper.do_eval(onReaction_func_name, ui_inst_dict, self.public_namespace.ui_jsons[ui_inst_dict[UI_NAME]], reaction, user)

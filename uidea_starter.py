@@ -1,63 +1,12 @@
 from libs import plugin, dataloader
 from addons.UIdea.libs import ui as ui_class
+from addons.UIdea.libs import ui_create, ui_error
+from addons.UIdea.libs.ui_constants import *
 import os, json, time
 import discord
 import re
 import traceback
 import pickle
-
-DISCORD_RXN_MAX = 20
-
-UI_DATA_PATH = 'addons/UIdea/data'
-DEFAULT_UIDEA_JSON = 'default_uidea_json.json'
-
-DEFAULT_JSON = dataloader.datafile(os.path.join(UI_DATA_PATH, DEFAULT_UIDEA_JSON), load_as='json').content
-if not os.path.isdir(UI_DATA_PATH):
-    os.mkdir(UI_DATA_PATH)
-UI_JSONS_PATH = 'addons'
-# print(json.dumps(DEFAULT_JSON, indent=4)) # debug
-UI_SAVE_LOC = os.path.join(UI_DATA_PATH, 'saved')
-if not os.path.isdir(UI_SAVE_LOC):
-    os.mkdir(UI_SAVE_LOC)
-
-UI_PICKLE_LOC = os.path.join(UI_DATA_PATH, 'pickles')
-if not os.path.isdir(UI_PICKLE_LOC):
-    os.mkdir(UI_PICKLE_LOC)
-
-SUPPORTED_API_VERSIONS = ['v0.0.1', 'v0.0.2', 'v0.0.3', 'v0.0.4']
-
-# constants for json file
-VERSION = 'version'
-API = 'api'
-TYPE = 'type'
-
-INFO = 'info'
-NAME = 'name'
-DESCRIPTION = 'description'
-HELP = 'help'
-PACKAGE = 'package'
-FILEPATH = 'filepath'
-OWNER = 'owner'
-MAINTAINERS = 'maintainers'
-
-LIFESPAN = 'lifespan'
-PERSISTENCE = 'persistence'
-PRIVATE = 'private'
-SHOULDCREATE = 'shouldCreate'
-ONCREATE = 'onCreate'
-ONDELETE = 'onDelete'
-ONPERSIST = 'onPersist'
-ONREACTION = 'onReaction'
-DEFAULT_EMBED = 'defaultEmbed'
-DEBUG = 'debug'
-
-# ui_messages constants
-UI_INSTANCE = 'UI Instance'
-CREATOR = 'creator'
-CREATION_TIME = 'creation time'
-LAST_UPDATED = 'last updated'
-UI_NAME = 'UI Name'
-IS_LIVE = 'isLive'
 
 class Plugin(plugin.AdminPlugin, plugin.OnMessagePlugin):
     '''UIdea plugin to create new UIs.
@@ -67,46 +16,6 @@ For more information about UIdea, see GitHub : <https://github.com/IdeaBot/UIdea
 
 Your interaction with this will probably never be evident.
 If it is evident, I've probably done something wrong. '''
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # transfer contants to public namespace
-        self.public_namespace.UI_DATA_PATH = UI_DATA_PATH
-
-        # constants for json file
-        self.public_namespace.VERSION = VERSION
-        self.public_namespace.API = API
-        self.public_namespace.TYPE = TYPE
-
-        self.public_namespace.INFO = INFO
-        self.public_namespace.NAME = NAME
-        self.public_namespace.DESCRIPTION = DESCRIPTION
-        self.public_namespace.HELP = HELP
-        self.public_namespace.PACKAGE = PACKAGE
-        self.public_namespace.FILEPATH = FILEPATH
-        self.public_namespace.OWNER = OWNER
-        self.public_namespace.MAINTAINERS = MAINTAINERS
-
-        self.public_namespace.LIFESPAN = LIFESPAN
-        self.public_namespace.PERSISTENCE = PERSISTENCE
-        self.public_namespace.PRIVATE = PRIVATE
-        self.public_namespace.SHOULDCREATE = SHOULDCREATE
-        self.public_namespace.ONCREATE = ONCREATE
-        self.public_namespace.ONDELETE = ONDELETE
-        self.public_namespace.ONPERSIST = ONPERSIST
-        self.public_namespace.ONREACTION = ONREACTION
-        self.public_namespace.DEFAULT_EMBED = DEFAULT_EMBED
-        self.public_namespace.DEBUG = DEBUG
-
-        # ui_messages constants
-        self.public_namespace.UI_INSTANCE = UI_INSTANCE
-        self.public_namespace.CREATOR = CREATOR
-        self.public_namespace.CREATION_TIME = CREATION_TIME
-        self.public_namespace.LAST_UPDATED = LAST_UPDATED
-        self.public_namespace.UI_NAME = UI_NAME
-        self.public_namespace.IS_LIVE = IS_LIVE
-
-
     def on_client_add(self):
         # true startup
         # load ui jsons
@@ -119,51 +28,24 @@ If it is evident, I've probably done something wrong. '''
 
 
     async def action(self, msg):
+        # ignore private messages, for now
+        if not msg.server:
+            return
         for ui in self.public_namespace.uis:
             try:
                 is_match = eval('self.public_namespace.uis[ui].UI.'+self.public_namespace.ui_jsons[ui][SHOULDCREATE]+'(msg)')
-            except:
+            except Exception as e:
                 # TODO: system to notify owner of shouldCreate startup error
-                print('!!! Error in %s method for ui %s:' %(self.public_namespace.ui_jsons[ui][SHOULDCREATE], ui))
-                traceback.print_exc()
-                pass
+                error_desc = 'Error in `%s` method for ui `%s`' %(self.public_namespace.ui_jsons[ui][SHOULDCREATE], ui)
+                #print(error_desc)
+                #traceback.print_exc()
+                ui_error.report_ui_error(e, self.public_namespace.ui_jsons[ui], error_desc)
             else:
                 if is_match:
-                    # ui_msg = await self.send_message(msg.channel, embed=temp_dict[UI_INSTANCE])
-                    temp_dict = dict()
-                    temp_dict[CREATOR] = msg.author.id
-                    temp_dict[CREATION_TIME] = temp_dict[LAST_UPDATED] = time.time()
-                    temp_dict[UI_NAME] = ui
-                    temp_dict[IS_LIVE] = False
-                    ui_msg = await self.send_message(msg.channel, embed=ui_class.makeEmbed(self.public_namespace.ui_jsons[ui][DEFAULT_EMBED]) )
-                    try:
-                        temp_dict[UI_INSTANCE] = self.public_namespace.uis[ui].UI(self.bot.loop, self.edit_message, ui_msg)
-                    except:
-                        # TODO: system to notify owner of startup error
-                        print('!!! Error in %s method for ui %s:' %('__init__', ui))
-                        traceback.print_exc()
-                        pass
-                    # add reactions to ui msg
-                    for emoji in self.public_namespace.ui_jsons[ui][ONREACTION]:
-                        emoji = emoji.strip()
-                        if len(emoji)==18: # discord ID length is 18
-                            emoji = discord.Object(id=emoji)
-                        else:
-                            emoji = emoji[0]
-                            # TODO: Fix json on loading in cases where there are hidden characters
-                        await self.add_reaction(ui_msg, emoji)
-                    if self.public_namespace.ui_jsons[ui][ONCREATE] is not None:
-                        try:
-                            eval('temp_dict[UI_INSTANCE].'+self.public_namespace.ui_jsons[ui][ONCREATE]+'(msg)')
-                        except:
-                            # TODO: system to notify owner of startup error
-                            print('!!! Error in %s method for ui %s:' %(self.public_namespace.ui_jsons[ui][ONCREATE], ui))
-                            traceback.print_exc()
-                            pass
-                    self.public_namespace.ui_messages[ui_msg.id+':'+ui_msg.channel.id]=temp_dict
-                    self.public_namespace.ui_messages[ui_msg.id+':'+ui_msg.channel.id][IS_LIVE]=True
-                    # add ui message to always_watch_messages
-                    self.bot.always_watch_messages.add(ui_msg)
+                    temp_dict = await ui_create.make_ui(self.public_namespace.uis[ui], self.public_namespace.ui_jsons[ui], msg, self.bot)
+                    if temp_dict is not None:
+                        self.public_namespace.ui_messages[temp_dict[ID]]=temp_dict
+                        self.public_namespace.ui_messages[temp_dict[ID]][IS_LIVE]=True
                     break
 
     def shutdown(self):
@@ -174,20 +56,24 @@ If it is evident, I've probably done something wrong. '''
         for f in os.listdir(UI_SAVE_LOC):
             try:
                 os.remove(os.path.join(UI_SAVE_LOC, f))
-            except OSError:
+            except OSError as e:
                 # TODO: proper logging for errors
-                print('!!! Error deleting %s' %(os.path.join(UI_SAVE_LOC, f)))
-                traceback.print_exc()
-                pass
+                error_desc = 'Error deleting %s' %(os.path.join(UI_SAVE_LOC, f))
+                #print(error_desc)
+                #traceback.print_exc()
+                #pass
+                ui_error.report_error(e, error_desc, user=None)
         # clear pickle folder
         for f in os.listdir(UI_PICKLE_LOC):
             try:
                 os.remove(os.path.join(UI_PICKLE_LOC, f))
-            except OSError:
+            except OSError as e:
                 # TODO: proper logging for errors
-                print('!!! Error deleting %s' %(os.path.join(UI_PICKLE_LOC, f)))
-                traceback.print_exc()
-                pass
+                error_desc = 'Error deleting %s' %(os.path.join(UI_PICKLE_LOC, f))
+                #print(error_desc)
+                #traceback.print_exc()
+                #pass
+                ui_error.report_error(e, error_desc, user=None)
 
         for ui in ui_messages:
             if self.public_namespace.ui_jsons[ui_messages[ui][UI_NAME]][PERSISTENCE]:
@@ -231,11 +117,12 @@ If it is evident, I've probably done something wrong. '''
                     if ui_jsons[result[key][UI_NAME]][ONPERSIST]:
                         try:
                             eval('result[key][UI_INSTANCE].'+ui_jsons[result[key][UI_NAME]][ONPERSIST]+'()')
-                        except:
+                        except Exception as e:
                             # TODO: system to notify owner of startup error
-                            print('!!! Error in %s method for ui %s:' %(ui_jsons[result[key][UI_NAME]][ONPERSIST], result[key][UI_NAME]))
-                            traceback.print_exc()
-                            pass
+                            error_desc = 'Error in `%s` method for ui `%s`' %(ui_jsons[result[key][UI_NAME]][ONPERSIST], result[key][UI_NAME])
+                            #print(error_desc)
+                            #traceback.print_exc()
+                            ui_error.report_ui_error(e, ui_jsons[result[key][UI_NAME]], error_desc)
         return result
 
 
@@ -255,8 +142,9 @@ def load_ui_jsons(root):
                     ui_jsons[temp_json[INFO][NAME]]=temp_json
                 else:
                     # TODO: log warning about invalid JSON
-                    print('!!! Error in JSON of ui %s:' %(f[:-len('.json')]))
-                    pass
+                    desc = '!!! Error in JSON of ui %s' %(f[:-len('.json')])
+                    # print(error_desc)
+                    ui_error.report_issue(desc)
         else:
             for sub_f in sorted(os.listdir(os.path.join(root, f))):
                 if os.path.isfile(os.path.join(root, f, sub_f)):
@@ -270,8 +158,9 @@ def load_ui_jsons(root):
                             ui_jsons[temp_json[INFO][NAME]]=temp_json
                         else:
                             # TODO: log warning about invalid JSON
-                            print('!!! Error in JSON of ui %s:' %(sub_f[:-len('.json')]))
-                            pass
+                            desc = '!!! Error in JSON of ui %s' %(sub_f[:-len('.json')])
+                            # print(error_desc)
+                            ui_error.report_issue(desc)
     # print('Loaded JSONS:', ui_jsons) # debug
     return ui_jsons
 

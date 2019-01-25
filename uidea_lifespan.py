@@ -1,5 +1,8 @@
 from libs import plugin
-import time
+from addons.UIdea.libs import ui as ui_class
+from addons.UIdea.libs import ui_helper, ui_error
+from addons.UIdea.libs.ui_constants import *
+import time, discord
 
 class Plugin(plugin.AdminPlugin, plugin.OnReadyPlugin):
     '''UIdea plugin to terminate UIs.
@@ -21,29 +24,25 @@ If it is evident, I've probably done something wrong.
         for ui in self.public_namespace.ui_messages:
             ui_inst_dict = self.public_namespace.ui_messages[ui]
             # get associated ui json
-            ui_json = self.public_namespace.ui_jsons[self.public_namespace.ui_messages[ui][self.public_namespace.UI_NAME]]
+            ui_json = self.public_namespace.ui_jsons[self.public_namespace.ui_messages[ui][UI_NAME]]
             # compare ui json lifespan with ui_message timespan since last update
-            if ui_json[self.public_namespace.LIFESPAN]>=0 and (time.time()-ui_inst_dict[self.public_namespace.LAST_UPDATED])>ui_json[self.public_namespace.LIFESPAN]:
+            if ui_json[LIFESPAN]>=0 and (time.time()-ui_inst_dict[LAST_UPDATED])>ui_json[LIFESPAN]:
                 # if past lifespan
                 # do onDelete
-                if ui_json[self.public_namespace.ONDELETE]:
-                    try:
-                        eval('self.public_namespace.ui_messages[ui][self.public_namespace.UI_INSTANCE].'+ui_json[self.public_namespace.ONDELETE]+'()')
-                    except:
-                        # TODO: system to notify owner of onDelete error
-                        print('!!! Error in %s method for ui %s:' %(ui_json[self.public_namespace.ONDELETE], self.public_namespace.ui_messages[ui][self.public_namespace.UI_NAME]))
-                        traceback.print_exc()
-                        pass
+                if ui_json[ONDELETE]:
+                    result, is_success = ui_helper.do_eval(ui_json[ONDELETE], self.public_namespace.ui_messages[ui], ui_json)
                 # delete message
-                # await self.edit_message(ui_inst_dict[self.public_namespace.UI_INSTANCE].message, new_content='Expired', embed=None)
-                await self.bot.delete_message(ui_inst_dict[self.public_namespace.UI_INSTANCE].message)
-                # TODO: actually delete message
+                try:
+                    await self.bot.delete_message(ui_inst_dict[UI_INSTANCE].message)
+                except discord.NotFound:
+                    # if the message couldn't be found it rly should be deleted
+                    pass
                 # delete watch message entry
                 msg_id, channel_id = ui.split(':')
-                for i in range(len(self.always_watch_messages)):
-                    msg = self.always_watch_messages[i]
+                for msg in self.always_watch_messages:
                     if msg.id==msg_id and msg.channel.id==channel_id:
-                        del(self.always_watch_messages[i])
+                        self.always_watch_messages.remove(msg)
+                        break
                 to_del.append(ui)
         # delete ui_instance data
         for i in to_del:
