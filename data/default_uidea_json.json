@@ -21,5 +21,5 @@
   "onPersist":null,
   "onReaction":{},
   "defaultEmbed":{"description":"placeholder UI"},
-  "debug":[]
+  "debug":["discord-log"]
 }

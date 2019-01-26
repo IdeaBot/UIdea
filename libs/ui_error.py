@@ -43,7 +43,11 @@ def report_error(error, description, user=None):
 
 
 def report_ui_error(error, ui_json, description):
-    report_error(error, description, user=ui_json[INFO][OWNER])
+    if 'discord-log' in ui_json[DEBUG]:
+        user = ui_json[INFO][OWNER]
+    else:
+        user = None
+    report_error(error, description, user=user)
 
 def make_msg_from_error(err, desc=''):
     tb = ''.join(traceback.format_exc())

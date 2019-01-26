@@ -133,32 +133,40 @@ def load_ui_jsons(root):
     for f in sorted(os.listdir(root)):
         if os.path.isfile(os.path.join(root, f)):
             if f[-len('.json'):]=='.json' and f[0]!='_' and f!=DEFAULT_UIDEA_JSON:
-                with open(os.path.join(root, f), 'r') as file:
-                    temp_json = json.load(file)
-                is_good = verify_ui_json(temp_json)
+                try:
+                    with open(os.path.join(root, f), 'r') as file:
+                        temp_json = json.load(file)
+                except:
+                    is_good=False
+                else:
+                    is_good = verify_ui_json(temp_json)
                 if is_good:
                     merge_defaults(temp_json, package=None, name=f[:-len('.json')], filepath=os.path.join(root, f)[:-len('.json')])
                     correct_func_strs(temp_json)
                     ui_jsons[temp_json[INFO][NAME]]=temp_json
                 else:
                     # TODO: log warning about invalid JSON
-                    desc = '!!! Error in JSON of ui %s' %(f[:-len('.json')])
+                    desc = 'Skipping %s UI JSON due to error in JSON' %(f[:-len('.json')])
                     # print(error_desc)
                     ui_error.report_issue(desc)
         else:
             for sub_f in sorted(os.listdir(os.path.join(root, f))):
                 if os.path.isfile(os.path.join(root, f, sub_f)):
                     if sub_f[-len('.json'):]=='.json' and sub_f[0]!='_':
-                        with open(os.path.join(root, f, sub_f), 'r') as file:
-                            temp_json = json.load(file)
-                        is_good = verify_ui_json(temp_json)
+                        try:
+                            with open(os.path.join(root, f, sub_f), 'r') as file:
+                                temp_json = json.load(file)
+                        except:
+                            is_good = False
+                        else:
+                            is_good = verify_ui_json(temp_json)
                         if is_good:
                             merge_defaults(temp_json, package=f, name=sub_f[:-len('.json')], filepath=os.path.join(root, f, sub_f)[:-len('.json')])
                             correct_func_strs(temp_json)
                             ui_jsons[temp_json[INFO][NAME]]=temp_json
                         else:
                             # TODO: log warning about invalid JSON
-                            desc = '!!! Error in JSON of ui %s' %(sub_f[:-len('.json')])
+                            desc = 'Skipping %s UI JSON due to error in JSON' %(sub_f[:-len('.json')])
                             # print(error_desc)
                             ui_error.report_issue(desc)
     # print('Loaded JSONS:', ui_jsons) # debug
