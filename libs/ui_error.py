@@ -25,6 +25,7 @@ def uiLogging():
     return logger
 
 log = uiLogging()
+log.info('Starting...')
 
 def report_error(error, description, user=None):
     # print(error.__traceback__)

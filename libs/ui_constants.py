@@ -23,7 +23,12 @@ UI_PICKLE_LOC = os.path.join(UI_DATA_PATH, 'pickles')
 if not os.path.isdir(UI_PICKLE_LOC):
     os.mkdir(UI_PICKLE_LOC)
 
-SUPPORTED_API_VERSIONS = ['v0.0.1', 'v0.0.2', 'v0.0.3', 'v0.0.4']
+SUPPORTED_API_VERSIONS = [
+                        'v0.0.1',  # >> current
+                        'v0.0.2',  #
+                        'v0.0.3',  #
+                        'v0.0.4'   #
+                        ]
 
 # constants for json file
 VERSION = 'version'

@@ -1,12 +1,19 @@
+''' Plugin to start UI instances
+
+Created 2018-12-25 by NGnius '''
+
 from libs import plugin, dataloader
 from addons.UIdea.libs import ui as ui_class
 from addons.UIdea.libs import ui_create, ui_error
 from addons.UIdea.libs.ui_constants import *
-import os, json, time
+import os
+import json
+import time
 import discord
 import re
 import traceback
 import pickle
+
 
 class Plugin(plugin.AdminPlugin, plugin.OnMessagePlugin):
     '''UIdea plugin to create new UIs.
@@ -16,16 +23,16 @@ For more information about UIdea, see GitHub : <https://github.com/IdeaBot/UIdea
 
 Your interaction with this will probably never be evident.
 If it is evident, I've probably done something wrong. '''
+
     def on_client_add(self):
         # true startup
         # load ui jsons
         self.public_namespace.ui_jsons = load_ui_jsons(UI_JSONS_PATH)
         # load each ui as defined in each json
         self.public_namespace.uis = load_uis(self.public_namespace.ui_jsons)
-        #print("UI JSON")
-        #print(json.dumps(self.public_namespace.ui_jsons, indent=4))
+        # print("UI JSON")
+        # print(json.dumps(self.public_namespace.ui_jsons, indent=4))
         self.public_namespace.ui_messages = self.load_ui_messages(self.public_namespace.ui_jsons) # load for persistence
-
 
     async def action(self, msg):
         # ignore private messages, for now
@@ -37,8 +44,8 @@ If it is evident, I've probably done something wrong. '''
             except Exception as e:
                 # TODO: system to notify owner of shouldCreate startup error
                 error_desc = 'Error in `%s` method for ui `%s`' %(self.public_namespace.ui_jsons[ui][SHOULDCREATE], ui)
-                #print(error_desc)
-                #traceback.print_exc()
+                # print(error_desc)
+                # traceback.print_exc()
                 ui_error.report_ui_error(e, self.public_namespace.ui_jsons[ui], error_desc)
             else:
                 if is_match:
@@ -59,9 +66,8 @@ If it is evident, I've probably done something wrong. '''
             except OSError as e:
                 # TODO: proper logging for errors
                 error_desc = 'Error deleting %s' %(os.path.join(UI_SAVE_LOC, f))
-                #print(error_desc)
-                #traceback.print_exc()
-                #pass
+                # print(error_desc)
+                # traceback.print_exc()
                 ui_error.report_error(e, error_desc, user=None)
         # clear pickle folder
         for f in os.listdir(UI_PICKLE_LOC):
@@ -70,9 +76,8 @@ If it is evident, I've probably done something wrong. '''
             except OSError as e:
                 # TODO: proper logging for errors
                 error_desc = 'Error deleting %s' %(os.path.join(UI_PICKLE_LOC, f))
-                #print(error_desc)
-                #traceback.print_exc()
-                #pass
+                # print(error_desc)
+                # traceback.print_exc()
                 ui_error.report_error(e, error_desc, user=None)
 
         for ui in ui_messages:
@@ -120,8 +125,8 @@ If it is evident, I've probably done something wrong. '''
                         except Exception as e:
                             # TODO: system to notify owner of startup error
                             error_desc = 'Error in `%s` method for ui `%s`' %(ui_jsons[result[key][UI_NAME]][ONPERSIST], result[key][UI_NAME])
-                            #print(error_desc)
-                            #traceback.print_exc()
+                            # print(error_desc)
+                            # traceback.print_exc()
                             ui_error.report_ui_error(e, ui_jsons[result[key][UI_NAME]], error_desc)
         return result
 

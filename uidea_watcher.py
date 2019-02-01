@@ -1,10 +1,16 @@
+''' Reaction-command for "button-clicks" (reactions) on UIs
+
+Created 2018-12-25 by NGnius '''
+
 from libs import reaction
 from addons.UIdea.libs import ui as ui_class
 from addons.UIdea.libs import ui_helper, ui_error
 from addons.UIdea.libs.ui_constants import *
 import asyncio
-import discord, time
+import discord
+import time
 import traceback
+
 
 class Reaction(reaction.ReactionAddCommand, reaction.ReactionRemoveCommand):
     '''UIdea plugin to watch for reactions to UI messages.

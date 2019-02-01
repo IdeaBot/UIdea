@@ -1,10 +1,8 @@
 from libs import embed
 
+
 class UI:
     def __init__(self, loop, edit_msg, msg):
-        self.loop = loop
-        self.message = msg
-        self.edit_message = edit_msg
         self.embed = makeEmbed(msg.embeds[0])
 
     def update(self):
@@ -17,6 +15,7 @@ class UI:
 
     def getEmbed(self):
         return self.embed
+
 
 def makeEmbed(embed_dict):
     return embed.create_embed(**embed_dict)

@@ -1,20 +1,24 @@
 ''' Collection of functions for creating new UI instances
 
 Created 2019-01-23 by NGnius '''
+
 from addons.UIdea.libs import ui as ui_class
 from addons.UIdea.libs.ui_constants import *
 from addons.UIdea.libs import ui_error, ui_helper
+from libs import loader
 import time
+import discord
+
 
 def create_instance(ui_lib, ui_msg, ui_json, bot_loop, edit_msg):
     try:
         return ui_lib.UI(bot_loop, edit_msg, ui_msg)
     except Exception as e:
-        # TODO: system to notify owner of startup error
-        error_desc = 'Error in `%s` method for ui `%s`' %('__init__', ui_json[INFO][NAME])
-        #print(error_desc)
-        #traceback.print_exc()
+        error_desc = 'Error in `%s` method for ui `%s`' % ('__init__', ui_json[INFO][NAME])
+        # print(error_desc)
+        # traceback.print_exc()
         ui_error.report_ui_error(e, ui_json, error_desc)
+
 
 async def make_ui(ui_lib, ui_json, msg, bot_inst):
     temp_dict = dict()
@@ -28,10 +32,35 @@ async def make_ui(ui_lib, ui_json, msg, bot_inst):
     if temp_dict[UI_INSTANCE] is None:
         await bot_inst.delete_message(ui_msg)
         return
+    # assign attributes to UI instance
+    try:
+        # set public_namespace
+        if ui_json[INFO][PACKAGE]:
+            if ui_json[INFO][PACKAGE] not in loader.sub_namespaces:
+                loader.sub_namespaces[ui_json[INFO][PACKAGE]] = loader.CustomNamespace()
+            temp_dict[UI_INSTANCE].public_namespace = loader.sub_namespaces[ui_json[INFO][PACKAGE]]
+        else:
+            temp_dict[UI_INSTANCE].public_namespace = loader.namespace
+        # NOTE: The following attributes should already be set up, this is just in case
+        # set bot loop
+        temp_dict[UI_INSTANCE].loop = bot_inst.loop
+        # set message
+        temp_dict[UI_INSTANCE].message = ui_msg
+        # set edit_message func
+        temp_dict[UI_INSTANCE].edit_message = bot_inst.edit_message
+        # set embed
+        temp_dict[UI_INSTANCE].embed = ui_class.makeEmbed(ui_msg.embeds[0])
+    except Exception as e:
+        # UI instance is probably in an invalid state wrt attributes right now;
+        # abort instance
+        error_desc = 'Error assigning attributes while creating ui `%s`' %(ui_json[INFO][NAME])
+        ui_error.report_ui_error(e, ui_json, error_desc)
+        await bot_inst.delete_message(ui_msg)
+        return
     # add reactions to ui msg
     for emoji in ui_json[ONREACTION]:
         emoji = emoji.strip()
-        if len(emoji)==18: # discord ID length is 18
+        if len(emoji) == 18:  # discord ID length is 18
             emoji = discord.Object(id=emoji)
         else:
             emoji = emoji[0]
