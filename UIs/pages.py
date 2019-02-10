@@ -12,7 +12,7 @@ class UI(ui_class.UI):
     '''Example and test implementation of UI'''
 
     def shouldCreate(message):
-        return 'read' in message.content.lower()
+        return 'I\'d like to read' in message.content.lower()
 
     def onCreate(self, msg):
         self.public_namespace.BOOK = BOOK
