@@ -1,0 +1,23 @@
+{
+  "version":{
+    "api":"v0.0.1",
+    "type":"ui-json"
+  },
+  "info":{
+    "name":null,
+    "description":"Pages are cool (test)",
+    "help":"Click on an arrow to change page (test)",
+    "package":null,
+    "filepath":"addons/UIdea/UIs/pages.py",
+    "maintainers": [],
+    "owner": "106537989684887552"
+  },
+  "lifespan":300,
+  "persistence":true,
+  "private":true,
+  "shouldCreate":"shouldCreate",
+  "onCreate":"onCreate",
+  "onDelete":null,
+  "onPersist":null,
+  "onReaction":{"⬅":"onLeft", "➡":"onRight"}
+}
