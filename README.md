@@ -3,7 +3,7 @@ IdeaBot add-ons package for user interfaces using Discord embeds.
 
 ## What? ##
 Text commands are so last century.
-Graphical User Interfaces (GUIs) are the future (and the past & present).
+Graphical User Interfaces (GUIs) are the future (and the past and the present).
 
 Text-based terminals were replaced by GUIs ages ago, but Discord bots still rely on text commands.
 IdeaBot's UIdea package aims to fix that by using Discord embeds to offer users an intuitive and easy-to-use way to interact with the bot.
@@ -11,27 +11,33 @@ IdeaBot's UIdea package aims to fix that by using Discord embeds to offer users 
 ## Overview ##
 UIdea is a collection of plugins, commands and reaction-commands to make user interaction easy.
 
-UIdea is a toolkit to enable others to create UIs, so UIdea does not have any concrete commands for users.
+UIdea is a toolkit to enable others to create UIs, so UIdea does not have any concrete commands for users. Most valid commands are defined by user-made UIs, but I can't document infinite possibilities.
 
-## Documentation ##
-**WIP**
+Nevertheless, there is one important command to know.
 
-### Getting Started ###
+### Commands ###
+* UI
+> Get helpful information on UIs
+
+# Documentation #
+
+## Getting Started ##
 UIdea uses a design similar to Android Activities; it uses two files to describe how the UI behaves.
-One file describes the starting layout and behaviour of the UI while the other file describes the behaviour of the UI.
+One file describes the starting layout and behaviour of the UI while the other file describes the functionality of the UI.
 
 The first file is a JSON file, ending with `.json`, which contains information about your UI. The default UI JSON, `data/default_uidea_json.json`, shows the structure.
 Any value can be removed except for information under "version", which are required to load the UI properly.
-Any missing value will be set to the default value from the default UI JSON file. Make sure you save your UI JSON file in the `addons` folder or a direct subfolder (ie `addons/my_package`).
+Any missing value will be set to the default value from the default UI JSON file. Make sure you save your UI JSON file in the `addons` folder or a direct subfolder (ie `addons/my_package`). [More information here](https://github.com/IdeaBot/UIdea/tree/master#ui-json-file).
 
 The second file is a Python file, ending with `.py`, which contains the UI class and methods to handle button (reaction) clicks and other inputs.
 The method in the UI class which will be called on button clicks (or other inputs) is the method name entered in your UI's json file.
 To modify the UI, modify the embed object stored in the variable `self.embed`.
 To update the UI (after modifying the embed), use `self.update()`.
+[More information here](https://github.com/IdeaBot/UIdea/tree/master#ui-python-file).
 
-For more information, see the full documentation of each file below.
+For more information, see the full documentation of both files below.
 
-### UI JSON ###
+## UI JSON File ##
 See `data/default_uidea_json.json` for the full layout of a JSON file.
 Please note that missing values will be filled with values from the default file.
 Certain values are required and will not be automatically filled.
@@ -39,7 +45,8 @@ If a required value is missing, the UI won't be loaded.
 To see skipped files, open `data/UIdea.log`.
 
 To see a working example, check out `pages.json` and `UIs/pages.py`. Send a message containing `I'd like to read` to try it out.
-#### values ####
+
+### Keys ###
 *-required
 
 **version***: dict; contains:
@@ -81,7 +88,7 @@ To see a working example, check out `pages.json` and `UIs/pages.py`. Send a mess
 >
 > * Omit keys to use their default value (except required keys & values).
 
-### UI Python File ###
+## UI Python File ##
 This file must define a UI class which should be a subclass of `libs.ui.UI`.
 To accomplish that, start your file with this:
 ```Python
@@ -98,32 +105,26 @@ The UI class is quite simple, but it does contain a few pre-defined attributes t
 
 To see a working example, check out `pages.json` and `UIs/pages.py`. Send a message containing `I'd like to read` to try it out.
 
-#### Default UI Class Attributes ####
+### Default UI Class Attributes ###
+These attributes do not need to be defined in your UI class (provided you extended the UI class like the code snippet above), but they shouldn't be deleted either.
+
 * **self.embed** : Embed
 > The discord Embed object displayed by the UI.
 > Modify this to modify the UI's appearance.
+
+* **self.getEmbed()** : Embed
+> Helper method to retrieve the embed.
+> This is called by self.update() to retrieve the Embed object.
+> NOTE: use self.embed to get the embed
+>
+> **returns** the embed to be displayed in Discord
 
 * **self.update()** : None
 > Updates the UI message with the modified Embed object
 > This should not be overridden.
 
-* **self.getEmbed()** : Embed
-> Helper method to retrieve the embed.
-> This is called by self.update() to retrieve the Embed object
->
-> **returns** the embed to be displayed in Discord
-
-#### Custom UI Class Methods ####
+### Custom UI Class Methods ###
 These are the methods named in your UI JSON file. They may have different names, but their parameters will always be as described here.
-
-* **shouldCreate(messsage)** : bool
-> Determines if a new UI instance should be created.
-> This method is called whenever a message is sent.
-> NOTE: self is not a parameter, since shouldCreate is called before a UI instance is create.
->
-> **message** : discord.Message object.
->
-> **returns** if UI should be created in response to the message.
 
 * **onCreate(self, message)** : None
 > Initializes the UI instance.
@@ -148,3 +149,12 @@ These are the methods named in your UI JSON file. They may have different names,
 > **reaction** : discord.Reaction object of the Reaction.
 >
 > **user** : discord.User object of the user who clicked the reaction button.
+
+* **shouldCreate(messsage)** : bool
+> Determines if a new UI instance should be created.
+> This method is called whenever a message is sent.
+> NOTE: self is not a parameter, since shouldCreate is called before a UI instance is create.
+>
+> **message** : discord.Message object.
+>
+> **returns** if UI should be created in response to the message.
