@@ -51,7 +51,7 @@ def report_ui_error(error, ui_json, description):
     report_error(error, description, user=user)
 
 def make_msg_from_error(err, desc=''):
-    tb = ''.join(traceback.format_exc())
+    tb = ''.join(traceback.format_exception(type(err), err, err.__traceback__))
     tb = tb.replace(str(getcwd()), '')
     if desc:
         return desc+'\n'+'Reason:** `%s`** '%str(err)+'```'+tb+'```'
