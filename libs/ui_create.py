@@ -50,6 +50,9 @@ async def make_ui(ui_lib, ui_json, msg, bot_inst):
         temp_dict[UI_INSTANCE].edit_message = bot_inst.edit_message
         # set embed
         temp_dict[UI_INSTANCE].embed = ui_class.makeEmbed(ui_msg.embeds[0])
+        # set bot, if posesses permissions
+        if ui_json[ACCESS_LEVEL] == 9:
+            temp_dict[UI_INSTANCE].bot = temp_dict[UI_INSTANCE].client = bot_inst
     except Exception as e:
         # UI instance is probably in an invalid state wrt attributes right now;
         # abort instance

@@ -89,6 +89,9 @@ If it is evident, I've probably done something wrong. '''
                 # delete incompatible vars
                 del(ui_messages[ui][UI_INSTANCE].edit_message)
                 del(ui_messages[ui][UI_INSTANCE].loop)
+                if self.public_namespace.ui_jsons[ui_messages[ui][UI_NAME]][ACCESS_LEVEL] == 9:
+                    del(ui_messages[ui][UI_INSTANCE].bot)
+                    del(ui_messages[ui][UI_INSTANCE].client)
                 # picke ui instance and save
                 with open(pickle_loc, 'wb') as file:
                     pickle.dump(ui_messages[ui][UI_INSTANCE], file, protocol=pickle.HIGHEST_PROTOCOL)
@@ -119,6 +122,8 @@ If it is evident, I've probably done something wrong. '''
                     # restore incompatible vars
                     result[key][UI_INSTANCE].loop = self.bot.loop
                     result[key][UI_INSTANCE].edit_message = self.edit_message
+                    if ui_jsons[result[key][UI_NAME]][ACCESS_LEVEL] == 9:
+                        result[key][UI_INSTANCE].bot = result[key][UI_INSTANCE].client = self.client
                     if ui_jsons[result[key][UI_NAME]][ONPERSIST]:
                         try:
                             eval('result[key][UI_INSTANCE].'+ui_jsons[result[key][UI_NAME]][ONPERSIST]+'()')
