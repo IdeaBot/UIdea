@@ -36,24 +36,27 @@ If it is evident, I've probably done something wrong. '''
 
     async def action(self, msg):
         # ignore private messages, for now
+        is_mentioned = self.bot.user in msg.mentions
         if not msg.server:
             return
         for ui in self.public_namespace.uis:
-            try:
-                is_match = eval('self.public_namespace.uis[ui].UI.'+self.public_namespace.ui_jsons[ui][SHOULDCREATE]+'(msg)')
-            except Exception as e:
-                # TODO: system to notify owner of shouldCreate startup error
-                error_desc = 'Error in `%s` method for ui `%s`' %(self.public_namespace.ui_jsons[ui][SHOULDCREATE], ui)
-                # print(error_desc)
-                # traceback.print_exc()
-                ui_error.report_ui_error(e, self.public_namespace.ui_jsons[ui], error_desc)
-            else:
-                if is_match:
-                    temp_dict = await ui_create.make_ui(self.public_namespace.uis[ui], self.public_namespace.ui_jsons[ui], msg, self.bot)
-                    if temp_dict is not None:
-                        self.public_namespace.ui_messages[temp_dict[ID]]=temp_dict
-                        self.public_namespace.ui_messages[temp_dict[ID]][IS_LIVE]=True
-                    break
+            should_be_mentioned = self.public_namespace.ui_jsons[ui][DIRECT_ONLY]
+            if not should_be_mentioned or (is_mentioned and should_be_mentioned):
+                try:
+                    is_match = eval('self.public_namespace.uis[ui].UI.'+self.public_namespace.ui_jsons[ui][SHOULDCREATE]+'(msg)')
+                except Exception as e:
+                    # TODO: system to notify owner of shouldCreate startup error
+                    error_desc = 'Error in `%s` method for ui `%s`' %(self.public_namespace.ui_jsons[ui][SHOULDCREATE], ui)
+                    # print(error_desc)
+                    # traceback.print_exc()
+                    ui_error.report_ui_error(e, self.public_namespace.ui_jsons[ui], error_desc)
+                else:
+                    if is_match:
+                        temp_dict = await ui_create.make_ui(self.public_namespace.uis[ui], self.public_namespace.ui_jsons[ui], msg, self.bot)
+                        if temp_dict is not None:
+                            self.public_namespace.ui_messages[temp_dict[ID]]=temp_dict
+                            self.public_namespace.ui_messages[temp_dict[ID]][IS_LIVE]=True
+                        break
 
     def shutdown(self):
         self.save_ui_messages(self.public_namespace.ui_messages)
