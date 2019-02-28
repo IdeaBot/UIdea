@@ -54,6 +54,7 @@ ONCREATE = 'onCreate'
 ONDELETE = 'onDelete'
 ONPERSIST = 'onPersist'
 ONREACTION = 'onReaction'
+ONMESSAGE = 'onMessage'
 DEFAULT_EMBED = 'defaultEmbed'
 DEBUG = 'debug'
 

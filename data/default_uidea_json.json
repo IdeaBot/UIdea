@@ -22,6 +22,7 @@
   "onDelete":null,
   "onPersist":null,
   "onReaction":{},
+  "onMessage":null,
   "defaultEmbed":{
     "description":"placeholder UI"
   },
