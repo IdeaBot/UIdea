@@ -92,3 +92,7 @@ async def make_ui(ui_lib, ui_json, bot_inst, msg=None, *args, **kwargs):
     # add ui message to always_watch_messages
     bot_inst.always_watch_messages.add(ui_msg)
     return temp_dict
+
+def create_ui(*args, **kwargs):
+    # overriden by uidea_creator
+    pass
