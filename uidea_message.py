@@ -11,4 +11,4 @@ class Plugin(plugin.OnMessagePlugin):
                 ui_msg = self.public_namespace.ui_messages[ui_id]
                 ui_json = self.public_namespace.ui_jsons[ui_msg[UI_NAME]]
                 if ui_json[ONMESSAGE] is not None:
-                    ui_helper.do_eval(ui_json[ONMESSAGE], ui_message, ui_json, msg)
+                    ui_helper.do_eval(ui_json[ONMESSAGE], ui_msg, ui_json, msg)
