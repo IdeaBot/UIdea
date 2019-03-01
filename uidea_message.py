@@ -14,10 +14,11 @@ class Plugin(plugin.OnMessagePlugin):
         if msg.author != self.me:
             for ui_id in self.public_namespace.ui_messages:
                 if self.public_namespace.ui_messages[ui_id][IS_LIVE]:
+                    ui_msg = self.public_namespace.ui_messages[ui_id]
+                    ui_json = self.public_namespace.ui_jsons[ui_msg[UI_NAME]]
                     _, ui_channel_id = ui_id.split(':')
-                    if ui_channel_id == msg.channel.id:
-                        ui_msg = self.public_namespace.ui_messages[ui_id]
-                        ui_json = self.public_namespace.ui_jsons[ui_msg[UI_NAME]]
+                    is_allowed_user = ui_json[PRIVATE] == False or (ui_json[PRIVATE] and ui_msg[CREATOR] == msg.author.id)
+                    if ui_channel_id == msg.channel.id and is_allowed_user:
                         if ui_json[ONMESSAGE] is not None:
                             _, success = ui_helper.do_eval(ui_json[ONMESSAGE], ui_msg, ui_json, msg)
                             if success:

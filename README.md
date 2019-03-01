@@ -50,8 +50,8 @@ To see a working example, check out `pages.json` and `UIs/pages.py`. Send a mess
 *-required
 
 **version***: dict; contains:
-* **api***: str; API version number. Accepted values: `v0.0.1`.
-* **type***: str; Must be `ui-json`, otherwise the file will be skipped.
+* **api***: str; API version number. Accepted values: `v0.0.1`. Maybe someday this will do something...
+* **type***: str; Must be `ui-json`, otherwise the file will be ignored.
 
 **info**: dict; contains:
 * **name**: str; the name of your UI.
@@ -68,6 +68,10 @@ To see a working example, check out `pages.json` and `UIs/pages.py`. Send a mess
 
 **private**: bool; whether more than one person can interact with an instance of your UI.
 
+**accessLevel**: int; the access level of your UI. 1 through 8 is standard access, 9 gives access to the client (bot) instance through `self.bot` and `self.client`.
+
+**directOnly**: bool; whether shouldCreate should be only called when the bot is mentioned (pinged).
+
 **shouldCreate**: str; the name of UI method which determines whether a new UI instance should be created. **CANNOT BE null!**
 
 **onCreate**: str; the name of the UI method which initializes the UI instance. **NOT `__init__`!**
@@ -78,13 +82,15 @@ To see a working example, check out `pages.json` and `UIs/pages.py`. Send a mess
 
 **onReaction**: dict; contains key : value of emoji : UI method called on emoji click.
 
+**onMessage**: str; the name of the UI method which handles messages sent below your UI. Great for accepting text input.
+
 **defaultEmbed**: dict; contains information to create the initial embed. Very similar to `Embed.to_dict()`.
 
-**debug**: list of str; contains debug flags.
+**debug**: list of str; contains debug flags. Add `"discord-log"` to the list to get error reports through Discord.
 
 > **__Pro tips__**:
 >
-> * set onCreate, onDelete, onPersist or onReaction to null to disable them.
+> * set onCreate, onDelete, onPersist, onReaction or onMessage to null to disable them.
 >
 > * Omit keys to use their default value (except required keys & values).
 
@@ -158,3 +164,22 @@ These are the methods named in your UI JSON file. They may have different names,
 > **message** : discord.Message object.
 >
 > **returns** if UI should be created in response to the message.
+
+### Libraries ###
+Most of the included libraries in libs/
+However it is possible to use them for creating new UIs.
+
+#### Creating a new UI ####
+* **ui_create.create_ui(name, message)** : None
+> Creates a new ui_msg using information from message:
+> * **message.author.id** : the creator or the UI.
+> * **message.channel** : the channel to send the message in.
+>
+> alternately, use keyword arguments and set message to None. Use kwargs:
+> * **author** : the creator's user id.
+> * **channel** : the channel id or channel object.
+>
+> **name** : str of the UI to spawn.
+>
+> **message** : discord.Message object of the message that instigated the creation.
+> Alternately, set this to None and use keyword arguments as described above.
