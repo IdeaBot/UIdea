@@ -20,13 +20,28 @@ def create_instance(ui_lib, ui_msg, ui_json, bot_loop, edit_msg):
         ui_error.report_ui_error(e, ui_json, error_desc)
 
 
-async def make_ui(ui_lib, ui_json, msg, bot_inst):
+async def make_ui_from_message(ui_lib, ui_json, msg, bot_inst):
+    return await make_ui(ui_lib, ui_json, bot_inst, msg)
+
+async def make_ui(ui_lib, ui_json, bot_inst, msg=None, *args, **kwargs):
     temp_dict = dict()
-    temp_dict[CREATOR] = msg.author.id
+    if msg is None:
+        if isinstance(kwargs['author'], str):  # want str
+            author_id = kwargs['author']
+        else:
+            author_id = kwargs['author'].id
+        if isinstance(kwargs['channel'], str):   # don't want str
+            channel = discord.Object(id=kwargs['channel'])
+        else:
+            channel = kwargs['channel']
+    else:
+        author_id = msg.author.id
+        channel = msg.channel
+    temp_dict[CREATOR] = author_id
     temp_dict[CREATION_TIME] = temp_dict[LAST_UPDATED] = time.time()
     temp_dict[UI_NAME] = ui_json[INFO][NAME]
     temp_dict[IS_LIVE] = False
-    ui_msg = await bot_inst.send_message(msg.channel, embed=ui_class.makeEmbed(ui_json[DEFAULT_EMBED]) )
+    ui_msg = await bot_inst.send_message(channel, embed=ui_class.makeEmbed(ui_json[DEFAULT_EMBED]) )
     temp_dict[ID]=ui_msg.id+':'+ui_msg.channel.id
     temp_dict[UI_INSTANCE] = create_instance(ui_lib, ui_msg, ui_json, bot_inst.loop, bot_inst.edit_message)
     if temp_dict[UI_INSTANCE] is None:
@@ -70,7 +85,7 @@ async def make_ui(ui_lib, ui_json, msg, bot_inst):
             # TODO: Fix json on loading in cases where there are hidden characters
         await bot_inst.add_reaction(ui_msg, emoji)
     if ui_json[ONCREATE] is not None:
-        result, is_success = ui_helper.do_eval(ui_json[ONCREATE], temp_dict, ui_json, msg)
+        result, is_success = ui_helper.do_eval(ui_json[ONCREATE], temp_dict, ui_json, msg, *args, **kwargs)
         if not is_success:
             await bot_inst.delete_message(ui_msg)
             return

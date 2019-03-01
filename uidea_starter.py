@@ -2,7 +2,7 @@
 
 Created 2018-12-25 by NGnius '''
 
-from libs import plugin, dataloader
+from libs import plugin, dataloader, loader
 from addons.UIdea.libs import ui as ui_class
 from addons.UIdea.libs import ui_create, ui_error
 from addons.UIdea.libs.ui_constants import *
@@ -52,7 +52,7 @@ If it is evident, I've probably done something wrong. '''
                     ui_error.report_ui_error(e, self.public_namespace.ui_jsons[ui], error_desc)
                 else:
                     if is_match:
-                        temp_dict = await ui_create.make_ui(self.public_namespace.uis[ui], self.public_namespace.ui_jsons[ui], msg, self.bot)
+                        temp_dict = await ui_create.make_ui_from_message(self.public_namespace.uis[ui], self.public_namespace.ui_jsons[ui], msg, self.bot)
                         if temp_dict is not None:
                             self.public_namespace.ui_messages[temp_dict[ID]]=temp_dict
                             self.public_namespace.ui_messages[temp_dict[ID]][IS_LIVE]=True
@@ -95,9 +95,15 @@ If it is evident, I've probably done something wrong. '''
                 if self.public_namespace.ui_jsons[ui_messages[ui][UI_NAME]][ACCESS_LEVEL] == 9:
                     del(ui_messages[ui][UI_INSTANCE].bot)
                     del(ui_messages[ui][UI_INSTANCE].client)
+                del(ui_messages[ui][UI_INSTANCE].public_namespace)
                 # picke ui instance and save
                 with open(pickle_loc, 'wb') as file:
-                    pickle.dump(ui_messages[ui][UI_INSTANCE], file, protocol=pickle.HIGHEST_PROTOCOL)
+                    try:
+                        pickle.dump(ui_messages[ui][UI_INSTANCE], file, protocol=pickle.HIGHEST_PROTOCOL)
+                    except:
+                        print('An error occured when saving UI id %s' % ui)
+                        print(ui_messages[ui][UI_INSTANCE].__dict__)
+                        raise
                 # replace ui_instance value with filepath
                 ui_dict = dict(ui_messages[ui]) # copy
                 ui_dict[UI_INSTANCE]=pickle_loc
@@ -122,11 +128,18 @@ If it is evident, I've probably done something wrong. '''
                 if result[key][UI_NAME] not in ui_jsons:
                     del(result[key])
                 else:
+                    ui_json = ui_jsons[result[key][UI_NAME]]
                     # restore incompatible vars
                     result[key][UI_INSTANCE].loop = self.bot.loop
                     result[key][UI_INSTANCE].edit_message = self.edit_message
-                    if ui_jsons[result[key][UI_NAME]][ACCESS_LEVEL] == 9:
+                    if ui_json[ACCESS_LEVEL] == 9:
                         result[key][UI_INSTANCE].bot = result[key][UI_INSTANCE].client = self.client
+                    if ui_json[INFO][PACKAGE]:
+                        if ui_json[INFO][PACKAGE] not in loader.sub_namespaces:
+                            loader.sub_namespaces[ui_json[INFO][PACKAGE]] = loader.CustomNamespace()
+                        result[key][UI_INSTANCE].public_namespace = loader.sub_namespaces[ui_json[INFO][PACKAGE]]
+                    else:
+                        result[key][UI_INSTANCE].public_namespace = loader.namespace
                     if ui_jsons[result[key][UI_NAME]][ONPERSIST]:
                         try:
                             eval('result[key][UI_INSTANCE].'+ui_jsons[result[key][UI_NAME]][ONPERSIST]+'()')
