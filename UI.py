@@ -17,7 +17,7 @@ Where
             if help_arg.lower() == 'list':
                 return self.ui_list()
             if help_arg and help_arg in self.public_namespace.ui_jsons:
-                return self.public_namespace.ui_jsons[help_arg][INFO][HELP]
+                return self.public_namespace.ui_jsons[help_arg][INFO][DESCRIPTION] + '\n\n' + self.public_namespace.ui_jsons[help_arg][INFO][HELP]
             else:
                 return 'The requested UI `%s` could not be found\n'%help_msg+super().help(help_msg, *args, **kwargs)
         else:
